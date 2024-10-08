@@ -459,10 +459,9 @@ impl<T: Responder> Apiv2Schema for ResponderWrapper<T> {}
 #[cfg(not(feature = "nightly"))]
 impl<T: Responder> OperationModifier for ResponderWrapper<T> {}
 
-impl<T: Responder<Body = BoxBody>> Responder for ResponderWrapper<T> {
-    type Body = BoxBody;
-
-    fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
+impl<T: Responder> Responder for ResponderWrapper<T> {
+    #[inline]
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse {
         self.0.respond_to(req)
     }
 }
@@ -473,10 +472,9 @@ impl<T: Responder<Body = BoxBody>> Responder for ResponderWrapper<T> {
 #[pin_project]
 pub struct ResponseWrapper<T, H>(#[pin] pub T, pub H);
 
-impl<T: Responder<Body = BoxBody>, H> Responder for ResponseWrapper<T, H> {
-    type Body = BoxBody;
-
-    fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
+impl<T: Responder, H> Responder for ResponseWrapper<T, H> {
+    #[inline]
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse {
         self.0.respond_to(req)
     }
 }
@@ -650,13 +648,13 @@ impl fmt::Display for NoContent {
     }
 }
 
-// Implement Responder for NoContent
 impl Responder for NoContent {
-    type Body = BoxBody;
-
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
-        HttpResponse::NoContent().finish() // Return a NoContent response
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse {
+        HttpResponse::build(StatusCode::NO_CONTENT)
+            .content_type("application/json")
+            .finish()
     }
+}
 
 impl Apiv2Schema for NoContent {}
 
